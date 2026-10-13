@@ -47,6 +47,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Too many attempts. Please try again later." }, { status: 429 });
   }
 
+  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (authError || !authData.user) {
+    return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+  }
+
   const { data, error } = await supabase
     .from("customers")
     .select("id, email, full_name")
@@ -54,11 +63,7 @@ export async function POST(request: Request) {
     .single();
 
   if (error || !data) {
-    return NextResponse.json({ error: "No such account" }, { status: 401 });
-  }
-
-  if (password !== "shopflow") {
-    return NextResponse.json({ error: "Wrong password" }, { status: 401 });
+    return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
   }
 
   return NextResponse.json({ user: data });
